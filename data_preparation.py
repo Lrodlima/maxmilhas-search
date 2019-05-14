@@ -4,7 +4,7 @@ from pyspark.sql.functions import when, col
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler
 from pyspark.ml.classification import LogisticRegression
-from pyspark.ml.evaluation as evals
+#from pyspark.ml.evaluation as evals
 from pyspark.sql.types import *
 from pyspark.sql import SparkSession
 import argparse
@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description="")
 parser.add_argument('-dp', '--datapath', action="store", help="Store the input data path")
 parser.add_argument('-op', '--outpath', action="store", help="Store the output data path")
 
-args = parser.parse_args()
+earrgs = parser.parse_args()
 
 if args.datapath:
     input_path = args.datapath
