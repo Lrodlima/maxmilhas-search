@@ -9,3 +9,7 @@ A execucao do arquivo _data_preparation.py_ executa todo o pipeline de leitura e
 
 
 python data_preparation.py -dp '/path/to/input' -op '/path/to/output'
+
+
+As analises realizadas encontram-se na pasta __notebooks__ ali fiz uma especie de relatorio, em que levantei 4 hipoteses
+a serem validadas posteriormente com a analise dos dados.

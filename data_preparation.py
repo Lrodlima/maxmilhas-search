@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description="")
 parser.add_argument('-dp', '--datapath', action="store", help="Store the input data path")
 parser.add_argument('-op', '--outpath', action="store", help="Store the output data path")
 
-earrgs = parser.parse_args()
+args = parser.parse_args()
 
 if args.datapath:
     input_path = args.datapath
@@ -81,6 +81,7 @@ if args.datapath:
 
     # Columns that can be dropped
     cols_to_drop = [
+        'id',
         'idusers',
         'idsearch',
         'airport_dep_name',
@@ -124,7 +125,9 @@ if args.datapath:
         stages += [string_indexer, encoder]
 
     # Transform all features into a vector using VectorAssembler
-    numericCols = ["days_travelled","adults", "childs", "infants", "seconds_search", "seconds_to_results", "quant_flights", "quant_flights_received", "quant_best_price_airlines", "quant_best_price_mm", "cheapest_mm_price_dep", "cheapest_mm_price_arr", "is_logged"]
+    numericCols = ["days_travelled", "adults", "childs", "infants", "seconds_search", 
+                   "seconds_to_results", "quant_flights", "quant_flights_received", 
+                   "quant_best_price_airlines", "quant_best_price_mm", "is_logged"]
     assemblerInputs = [c + "_fact" for c in categorical_cols] + numericCols
     vec_assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
     stages += [vec_assembler]
@@ -141,6 +144,6 @@ if args.datapath:
 
     lr = LogisticRegression()
 
-    evaluator = evals.BinaryClassificationEvaluator(metricName="areaUnderROC")
+    #evaluator = evals.BinaryClassificationEvaluator(metricName="areaUnderROC")
 
 from IPython import embed; embed()
