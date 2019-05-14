@@ -102,7 +102,7 @@ if args.datapath:
 
     max_df = max_df.drop(*cols_to_drop)
 
-    max_df.write.parquet(args.outpath, mode="overwrite")
+    #max_df.write.parquet(args.outpath, mode="overwrite")
 
     # Columns with categorical values
     categorical_cols = [
@@ -127,8 +127,8 @@ if args.datapath:
         stages += [string_indexer, encoder]
 
     # Transform all features into a vector using VectorAssembler
-    numericCols = ["days_travelled", "adults", "childs", "infants", "seconds_search", 
-                   "seconds_to_results", "quant_flights", "quant_flights_received", 
+    numericCols = ["days_travelled", "adults", "childs", "infants", "seconds_search",
+                   "seconds_to_results", "quant_flights", "quant_flights_received",
                    "quant_best_price_airlines", "quant_best_price_mm", "is_logged"]
     assemblerInputs = [c + "_fact" for c in categorical_cols] + numericCols
     vec_assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
@@ -144,10 +144,11 @@ if args.datapath:
     # Split the data into training and test sets
     training, test = preDataDF.randomSplit([.7, .3])
 
-    lr = LogisticRegression()
+    lr = LogisticRegression(labelCol="label", featuresCol="features", maxIter=10)
 
     evaluator = BinaryClassificationEvaluator(metricName="areaUnderROC")
 
+    '''
     # Create the parameter grid
     grid = ParamGridBuilder()
 
@@ -159,14 +160,21 @@ if args.datapath:
     grid = grid.build()
 
     # Create the CrossValidator
-    cv = CrossValidator(estimator=lr, 
-        estimatorParamMaps=grid, 
-        evaluator=evaluator)
+    cv = CrossValidator(estimator=lr,
+                        estimatorParamMaps=grid,
+                        evaluator=evaluator)
 
     # Fit cross validation models
     models = cv.fit(training)
 
     # Extract the best model
     best_lr = models.bestModel
+    '''
+    best_lr = lr.fit(training)
+    # Use the model to predict the test set
+    test_results = best_lr.transform(test)
+
+    # Evaluate the predictions
+    print(evaluator.evaluate(test_results))
 
 from IPython import embed; embed()
