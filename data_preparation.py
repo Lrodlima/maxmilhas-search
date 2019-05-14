@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
+import numpy as np
 from pyspark import SparkContext
 from pyspark.sql.functions import when, col
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import OneHotEncoderEstimator, StringIndexer, VectorAssembler
 from pyspark.ml.classification import LogisticRegression
-#from pyspark.ml.evaluation as evals
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
 from pyspark.sql.types import *
 from pyspark.sql import SparkSession
 import argparse
-
-# Create spark Session
-spark = SparkSession \
-            .builder \
-            .appName('MaxMilhas <> Processo Seletivo') \
-            .getOrCreate()
-
 
 parser = argparse.ArgumentParser(description="")
 parser.add_argument('-dp', '--datapath', action="store", help="Store the input data path")
@@ -23,6 +18,13 @@ parser.add_argument('-op', '--outpath', action="store", help="Store the output d
 args = parser.parse_args()
 
 if args.datapath:
+
+    # Create spark Session
+    spark = SparkSession \
+            .builder \
+            .appName('MaxMilhas <> Processo Seletivo') \
+            .getOrCreate()
+
     input_path = args.datapath
 
     fields = [
@@ -144,6 +146,27 @@ if args.datapath:
 
     lr = LogisticRegression()
 
-    #evaluator = evals.BinaryClassificationEvaluator(metricName="areaUnderROC")
+    evaluator = BinaryClassificationEvaluator(metricName="areaUnderROC")
+
+    # Create the parameter grid
+    grid = ParamGridBuilder()
+
+    # Add the hyperparameter
+    grid = grid.addGrid(lr.regParam, np.arange(0, .1, .01))
+    grid = grid.addGrid(lr.elasticNetParam, [0, 1])
+
+    # Build the grid
+    grid = grid.build()
+
+    # Create the CrossValidator
+    cv = CrossValidator(estimator=lr, 
+        estimatorParamMaps=grid, 
+        evaluator=evaluator)
+
+    # Fit cross validation models
+    models = cv.fit(training)
+
+    # Extract the best model
+    best_lr = models.bestModel
 
 from IPython import embed; embed()
