@@ -11,6 +11,18 @@ from pyspark.sql.types import *
 from pyspark.sql import SparkSession
 import argparse
 
+def column_dropper(df, threshold):
+  # Takes a dataframe and threshold for missing values. Returns a dataframe.
+  total_records = df.count()
+  for col in df.columns:
+    # Calculate the percentage of missing values
+    missing = df.where(df[col].isNull()).count()
+    missing_percent = missing / total_records
+    # Drop column if percent of missing is more than threshold
+    if missing_percent > threshold:
+      df = df.drop(col)
+  return df
+
 parser = argparse.ArgumentParser(description="")
 parser.add_argument('-dp', '--datapath', action="store", help="Store the input data path")
 parser.add_argument('-op', '--outpath', action="store", help="Store the output data path")
@@ -102,6 +114,9 @@ if args.datapath:
 
     max_df = max_df.drop(*cols_to_drop)
 
+    # Drop columns that are more than 60% missing
+    max_df = column_dropper(max_df, 0.6)
+
     #max_df.write.parquet(args.outpath, mode="overwrite")
 
     # Columns with categorical values
@@ -127,9 +142,10 @@ if args.datapath:
         stages += [string_indexer, encoder]
 
     # Transform all features into a vector using VectorAssembler
-    numericCols = ["days_travelled", "adults", "childs", "infants", "seconds_search",
-                   "seconds_to_results", "quant_flights", "quant_flights_received",
-                   "quant_best_price_airlines", "quant_best_price_mm", "is_logged"]
+    numericCols = ["days_travelled", "adults", "childs", "infants", 
+                    "quant_flights_received", 
+                    #"seconds_search", "seconds_to_results", "quant_flights", "quant_best_price_mm", "quant_best_price_airlines",
+                   "is_logged"]
     assemblerInputs = [c + "_fact" for c in categorical_cols] + numericCols
     vec_assembler = VectorAssembler(inputCols=assemblerInputs, outputCol="features")
     stages += [vec_assembler]
@@ -142,7 +158,7 @@ if args.datapath:
     preDataDF = pipelineModel.transform(max_df)
 
     # Split the data into training and test sets
-    training, test = preDataDF.randomSplit([.7, .3])
+    training, test = preDataDF.randomSplit([0.7, 0.3], seed=2019)
 
     lr = LogisticRegression(labelCol="label", featuresCol="features", maxIter=10)
 
@@ -170,11 +186,11 @@ if args.datapath:
     # Extract the best model
     best_lr = models.bestModel
     '''
-    best_lr = lr.fit(training)
+    #best_lr = lr.fit(training)
     # Use the model to predict the test set
-    test_results = best_lr.transform(test)
+    #test_results = best_lr.transform(test)
 
     # Evaluate the predictions
-    print(evaluator.evaluate(test_results))
+    #print(evaluator.evaluate(test_results))
 
 from IPython import embed; embed()
